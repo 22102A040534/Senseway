@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SenseWay - Real-Time Navigation</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif; /* Normal system font */
+    }
+
+    body {
+      background: #f5f5f5;
+    }
+
+    #map {
+      height: 100vh;
+      width: 100vw;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 12px;
+      border-radius: 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+
+    .controls input,
+    .controls select,
+    .controls button {
+      padding: 8px;
+      border-radius: 5px;
+      font-size: 14px;
+      border: none;
+    }
+
+    .controls button {
+      background: #007aff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .dashboard {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      min-width: 280px;
+      font-size: 16px;
+    }
+
+    .rest-stops {
+      position: absolute;
+      bottom: 140px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="controls">
+    <input type="text" id="start" placeholder="Enter Start"/>
+    <input type="text" id="destination" placeholder="Enter Destination"/>
+    <select id="transport-mode">
+      <option value="car">Car</option>
+      <option value="bicycle">Bike</option>
+      <option value="foot">Walk</option>
+      <option value="train">Train</option>
+    </select>
+    <button onclick="calculateRoute()">Get Route</button>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="dashboard">
+    <p><strong>Distance:</strong> <span id="distance">-</span> km</p>
+    <p><strong>ETA:</strong> <span id="eta">-</span> min</p>
+    <p><strong>Noise Level:</strong> <span id="noise">Loading...</span> dB</p>
+    <p><strong>Air Quality:</strong> <span id="aqi">Loading...</span></p>
+  </div>
+
+  <div class="rest-stops" id="restStops"></div>
+
+  <script>
+    let map = L.map('map').setView([13.6288, 78.6569], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    let routeControl, sensorRouteControl;
+    let restStopLayer = L.layerGroup().addTo(map);
+
+    const restStops = [
+      { name: "Park Stop", coords: [13.63, 78.66], icon: "🌳" },
+      { name: "Hospital Rest", coords: [13.62, 78.67], icon: "🏥" },
+      { name: "General Stop", coords: [13.625, 78.665], icon: "🛣️" }
+    ];
+
+    async function fetchEnvironmentalData() {
+      document.getElementById("noise").innerText = Math.floor(Math.random() * (80 - 30) + 30);
+      document.getElementById("aqi").innerText = Math.floor(Math.random() * (150 - 20) + 20);
+    }
+
+    setInterval(fetchEnvironmentalData, 5000);
+
+    async function calculateRoute() {
+      let mode = document.getElementById('transport-mode').value;
+      let profile = mode === "car" ? "driving" : mode === "bicycle" ? "cycling" : "walking";
+      let color = mode === "foot" ? "blue" : mode === "bicycle" ? "green" : "red";
+
+      if (routeControl) map.removeControl(routeControl);
+      if (sensorRouteControl) map.removeControl(sensorRouteControl);
+
+      routeControl = L.Routing.control({
+        waypoints: [L.latLng(13.63, 78.65), L.latLng(13.62, 78.68)],
+        routeWhileDragging: true,
+        lineOptions: { styles: [{ color: color, weight: 4 }] }
+      }).addTo(map);
+
+      sensorRouteControl = L.Routing.control({
+        waypoints: [L.latLng(13.63, 78.65), L.latLng(13.61, 78.69)],
+        routeWhileDragging: true,
+        lineOptions: { styles: [{ color: "orange", weight: 4, dashArray: "5,5" }] }
+      }).addTo(map);
+
+      routeControl.on('routesfound', function (e) {
+        let route = e.routes[0];
+        document.getElementById("distance").innerText = (route.summary.totalDistance / 1000).toFixed(2);
+        document.getElementById("eta").innerText = Math.round(route.summary.totalTime / 60);
+      });
+
+      showSafeRestStops();
+    }
+
+    function showSafeRestStops() {
+      restStopLayer.clearLayers();
+      let stopList = "<strong>Safe Rest Stops:</strong><br>";
+      restStops.forEach(stop => {
+        let marker = L.marker(stop.coords, {
+          icon: L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="font-size: 24px;">${stop.icon}</div>`,
+            iconSize: [30, 42],
+            iconAnchor: [15, 42]
+          })
+        }).addTo(restStopLayer);
+        stopList += `${stop.icon} ${stop.name}<br>`;
+      });
+      document.getElementById("restStops").innerHTML = stopList;
+      document.getElementById("restStops").style.display = "block";
+    }
+  </script>
+</body>
+</html>

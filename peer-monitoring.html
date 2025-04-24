@@ -1,0 +1,195 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Peer Monitoring - SenseWay</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 2em auto;
+            padding: 30px;
+            background: white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        #map {
+            height: 400px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            background: #f2830d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #d36f00;
+        }
+
+        .notifications {
+            margin-top: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        footer {
+            margin-top: auto;
+            background: #222;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        footer .actions {
+            list-style: none;
+            padding: 0;
+        }
+
+        footer .actions li {
+            display: inline;
+            margin: 0 15px;
+        }
+
+        footer .actions a {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        ul#contacts {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        ul#contacts li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="header">
+        <nav class="left"><a href="#menu"><span>Menu</span></a></nav>
+        <a href="index.html" class="logo">SenseWay</a>
+        <nav class="right"><a href="#" class="button alt">Log in</a></nav>
+    </header>
+
+    <!-- Menu -->
+    <nav id="menu">
+        <ul class="links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="generic.html">Profile</a></li>
+            <li><a href="elements.html">Emergency Support</a></li>
+            <li><a href="peer-monitoring.html">Peer Monitoring</a></li>
+        </ul>
+        <ul class="actions vertical">
+            <li><a href="#" class="button fit">Login</a></li>
+        </ul>
+    </nav>
+
+    <section class="container">
+        <h2>Peer Monitoring</h2>
+        <p>Share your live location with trusted contacts and allow them to track your safety in real-time.</p>
+
+        <div id="map"></div>
+
+        <button onclick="startLocationSharing()">Start Sharing</button>
+        <button onclick="stopLocationSharing()">Stop Sharing</button>
+
+        <p id="status">Location sharing is off.</p>
+
+        <h3>Trusted Contacts</h3>
+        <ul id="contacts">
+            <li>Mum - <button onclick="notifyContact('Mum')">Notify</button></li>
+            <li>Dad - <button onclick="notifyContact('Dad')">Notify</button></li>
+        </ul>
+
+        <div class="notifications">
+            <h4>Recent Notifications</h4>
+            <p id="notifications">No notifications yet.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="footer">
+        <div class="inner">
+            <h2>Get In Touch</h2>
+            <ul class="actions">
+                <li><span class="icon fa-phone"></span> <a href="#">(000) 000-0000</a></li>
+                <li><span class="icon fa-envelope"></span> <a href="#">information@senseway.com</a></li>
+                <li><span class="icon fa-map-marker"></span> India</li>
+            </ul>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map = L.map('map').setView([13.6288, 79.4192], 15);
+        let marker = null;
+        let watchId = null;
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        function startLocationSharing() {
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        if (marker) {
+                            marker.setLatLng([lat, lon]);
+                        } else {
+                            marker = L.marker([lat, lon]).addTo(map);
+                        }
+                        map.setView([lat, lon], 16);
+                        document.getElementById("status").innerText = `Location shared: Lat ${lat.toFixed(4)}, Lon ${lon.toFixed(4)}`;
+                    },
+                    () => {
+                        document.getElementById("status").innerText = "Error sharing location.";
+                    }
+                );
+            } else {
+                document.getElementById("status").innerText = "Geolocation not supported.";
+            }
+        }
+
+        function stopLocationSharing() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                document.getElementById("status").innerText = "Location sharing is off.";
+            }
+        }
+
+        function notifyContact(name) {
+            const notificationBox = document.getElementById("notifications");
+            notificationBox.innerText = `Alert sent to ${name} at ${new Date().toLocaleTimeString()}`;
+        }
+    </script>
+</body>
+</html>

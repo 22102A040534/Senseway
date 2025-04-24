@@ -1,0 +1,107 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Environmental Insights - SenseWay</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        .insight-container {
+            padding: 40px;
+            text-align: center;
+        }
+        .insight-box {
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin: 20px auto;
+            max-width: 600px;
+        }
+        .insight-box h3 {
+            margin-bottom: 10px;
+        }
+        .status-bar {
+            height: 20px;
+            border-radius: 10px;
+            background: #ddd;
+            position: relative;
+        }
+        .status-fill {
+            height: 100%;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 1s ease;
+        }
+        .notification {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header id="header">
+        <a href="index.html" class="logo">SenseWay</a>
+    </header>
+    
+    <section class="insight-container">
+        <h2>Dynamic Environmental Insights</h2>
+        <p>Stay aware of real-time environmental factors along your route.</p>
+        
+        <div class="insight-box">
+            <h3>Crowd Density</h3>
+            <div class="status-bar"><div id="crowdStatus" class="status-fill" style="background: orange;"></div></div>
+        </div>
+        
+        <div class="insight-box">
+            <h3>Noise Levels</h3>
+            <div class="status-bar"><div id="noiseStatus" class="status-fill" style="background: red;"></div></div>
+        </div>
+        
+        <div class="notification" id="notificationBox"></div>
+    </section>
+    
+    <footer id="footer">
+        <div class="inner">
+            <h2>Get In Touch</h2>
+            <ul class="actions">
+                <li><span class="icon fa-phone"></span> <a href="#">(000) 000-0000</a></li>
+                <li><span class="icon fa-envelope"></span> <a href="#">information@senseway.com</a></li>
+                <li><span class="icon fa-map-marker"></span> India</li>
+            </ul>
+        </div>
+    </footer>
+    
+    <script>
+        function updateInsights() {
+            let crowdDensity = Math.floor(Math.random() * 100);
+            let noiseLevel = Math.floor(Math.random() * 100);
+            
+            document.getElementById("crowdStatus").style.width = crowdDensity + "%";
+            document.getElementById("noiseStatus").style.width = noiseLevel + "%";
+            
+            let notification = "";
+            if (crowdDensity > 70) {
+                notification += "You're approaching a crowded area. Consider an alternate route. ";
+            }
+            if (noiseLevel > 60) {
+                notification += "High noise levels detected. Consider using headphones if sensitive. ";
+            }
+            
+            if (notification) {
+                document.getElementById("notificationBox").style.display = "block";
+                document.getElementById("notificationBox").innerText = notification;
+            } else {
+                document.getElementById("notificationBox").style.display = "none";
+            }
+        }
+        
+        setInterval(updateInsights, 5000);
+    </script>
+</body>
+</html>

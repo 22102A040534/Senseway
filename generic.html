@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>User Profile - SenseWay</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <style>
+        /* Polished UI Matching Index Page */
+        body {
+            font-family: Arial, sans-serif;
+            background: url('assets/img/background.jpg') no-repeat center center/cover;
+            color: #1097ea;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .profile-container {
+            background: rgba(243, 239, 239, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            margin: auto;
+            box-shadow: 0px 4px 10px rgba(238, 172, 28, 0.5);
+        }
+
+        h2 {
+            color: #e8a52a;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+        }
+
+        .toggle-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Toggle Switch Styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: rgb(20, 156, 235);
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #1ba7f3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        button {
+            background-color: #14c8e8;
+            color: white;
+            padding: 12px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-size: 18px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #e4ac11;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Profile Section -->
+<div class="profile-container">
+    <h2>User Profile</h2>
+    <p>Customize your navigation experience.</p>
+
+    <form id="profileForm">
+        <label><i class="fas fa-user"></i> Full Name:</label>
+        <input type="text" id="name" placeholder="Enter your name" required>
+
+        <label><i class="fas fa-envelope"></i> Email:</label>
+        <input type="email" id="email" placeholder="Enter your email" required>
+
+        <label><i class="fas fa-walking"></i> Mobility Preferences:</label>
+        <select id="mobility">
+            <option value="walking">Walking</option>
+            <option value="cycling">Cycling</option>
+            <option value="driving">Driving</option>
+        </select>
+
+        <label><i class="fas fa-volume-up"></i> Sensory Preferences:</label>
+        <div class="toggle-group">
+            <label class="switch">
+                <input type="checkbox" id="loudAreas">
+                <span class="slider"></span>
+            </label> Avoid Loud Areas
+
+            <label class="switch">
+                <input type="checkbox" id="crowdedZones">
+                <span class="slider"></span>
+            </label> Minimize Crowded Zones
+
+            <label class="switch">
+                <input type="checkbox" id="wellLit">
+                <span class="slider"></span>
+            </label> Prefer Well-Lit Areas
+        </div>
+
+        <label><i class="fas fa-exclamation-circle"></i> Triggers:</label>
+        <div class="toggle-group">
+            <label class="switch">
+                <input type="checkbox" id="loudNoises">
+                <span class="slider"></span>
+            </label> Loud Noises
+
+            <label class="switch">
+                <input type="checkbox" id="brightLights">
+                <span class="slider"></span>
+            </label> Bright Lights
+
+            <label class="switch">
+                <input type="checkbox" id="largeCrowds">
+                <span class="slider"></span>
+            </label> Large Crowds
+        </div>
+
+        <label><i class="fas fa-heartbeat"></i> Health Condition:</label>
+        <input type="text" id="health" placeholder="Specify neurodiverse condition (optional)">
+
+        <label><i class="fas fa-user-shield"></i> Emergency Contacts:</label>
+        <input type="text" id="emergency" placeholder="Emergency Contact Name">
+        <input type="tel" id="emergencyPhone" placeholder="Emergency Contact Number">
+
+        <button type="submit">Save Preferences</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const profileForm = document.getElementById("profileForm");
+
+    profileForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const userProfile = {
+            name: document.getElementById("name").value,
+            email: document.getElementById("email").value,
+            mobility: document.getElementById("mobility").value,
+            sensory: {
+                avoidLoudAreas: document.getElementById("loudAreas").checked,
+                minimizeCrowdedZones: document.getElementById("crowdedZones").checked,
+                preferWellLit: document.getElementById("wellLit").checked
+            },
+            triggers: {
+                loudNoises: document.getElementById("loudNoises").checked,
+                brightLights: document.getElementById("brightLights").checked,
+                largeCrowds: document.getElementById("largeCrowds").checked
+            },
+            health: document.getElementById("health").value,
+            emergency: {
+                contactName: document.getElementById("emergency").value,
+                contactPhone: document.getElementById("emergencyPhone").value
+            }
+        };
+
+        localStorage.setItem("userProfile", JSON.stringify(userProfile));
+        alert("Profile saved successfully!");
+    });
+
+    const savedProfile = JSON.parse(localStorage.getItem("userProfile"));
+    if (savedProfile) {
+        document.getElementById("name").value = savedProfile.name;
+        document.getElementById("email").value = savedProfile.email;
+        document.getElementById("mobility").value = savedProfile.mobility;
+        document.getElementById("health").value = savedProfile.health;
+        document.getElementById("emergency").value = savedProfile.emergency.contactName;
+        document.getElementById("emergencyPhone").value = savedProfile.emergency.contactPhone;
+    }
+});
+</script>
+
+</body>
+</html>
+
+
+<!-- Scripts -->
+<script src="assets/js/jquery.min.js"></script><script src="assets/js/jquery.scrolly.min.js"></script><script src="assets/js/skel.min.js"></script><script src="assets/js/util.js"></script><script src="assets/js/main.js"></script></body></html> 

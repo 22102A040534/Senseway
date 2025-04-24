@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SenseWay - Smart Navigation</title>
+
+  <!-- Leaflet.js -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+
+  <!-- Google Fonts & Material UI -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    body { background: #f5f5f5; }
+    #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 0; }
+
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+    .controls input, .controls select, .controls button {
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      border: none;
+    }
+    .controls button { background: #007AFF; color: white; cursor: pointer; }
+
+    .dashboard {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      min-width: 250px;
+      font-size: 16px;
+      display: none;
+    }
+
+    .bottom-panel {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    .sound-toggle, .verbal-cue-box {
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+    }
+    .sound-toggle {
+      background: #333;
+      color: white;
+      cursor: pointer;
+    }
+    .verbal-cue-box {
+      background: #007AFF;
+      color: white;
+      min-width: 200px;
+    }
+
+    .suggestions-box {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      z-index: 9999;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+    .suggestions-box div {
+      padding: 8px;
+      cursor: pointer;
+    }
+    .suggestions-box div:hover {
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="controls">
+    <div style="position: relative;">
+      <input type="text" id="start" placeholder="Enter Starting Point" oninput="autoComplete(this, 'start')">
+      <div id="start-suggestions" class="suggestions-box"></div>
+    </div>
+    <div style="position: relative;">
+      <input type="text" id="destination" placeholder="Enter Destination" oninput="autoComplete(this, 'destination')">
+      <div id="destination-suggestions" class="suggestions-box"></div>
+    </div>
+    <select id="transport-mode" onchange="updateDashboard()">
+      <option value="car">Car</option>
+      <option value="bicycle">Bike</option>
+      <option value="foot">Walk</option>
+      <option value="train">Train</option>
+    </select>
+    <button onclick="calculateRoute()">Get Route</button>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="dashboard" id="dashboard">
+    <p><strong>Distance:</strong> <span id="distance">-</span> km</p>
+    <p><strong>ETA:</strong> <span id="eta">-</span> min</p>
+  </div>
+
+  <div class="bottom-panel">
+    <div class="sound-toggle" onclick="toggleSound()">🔊 Sound: <span id="soundStatus">On</span></div>
+    <div class="verbal-cue-box" id="verbalCue">Verbal Instructions</div>
+  </div>
+
+  <script>
+    let map = L.map('map').setView([13.6288, 78.6569], 13); // Tirupati
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    let routeControl;
+    let soundEnabled = true;
+
+    async function geocodeLocation(location) {
+      let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
+      let data = await response.json();
+      return data.length > 0 ? [data[0].lat, data[0].lon] : null;
+    }
+
+    async function calculateRoute() {
+      let start = document.getElementById('start').value;
+      let destination = document.getElementById('destination').value;
+      let mode = document.getElementById('transport-mode').value;
+
+      if (!start || !destination) {
+        alert("Please enter both start and destination.");
+        return;
+      }
+
+      let startCoords = await geocodeLocation(start);
+      let destCoords = await geocodeLocation(destination);
+
+      if (!startCoords || !destCoords) {
+        alert("Locations not found.");
+        return;
+      }
+
+      if (routeControl) map.removeControl(routeControl);
+
+      let profile = mode === "car" ? "driving" : mode === "bicycle" ? "cycling" : mode === "foot" ? "walking" : "train";
+      let color = mode === "foot" ? "blue" : mode === "bicycle" ? "green" : mode === "car" ? "red" : "purple";
+      let dashArray = mode === "foot" ? "5,5" : "";
+
+      routeControl = L.Routing.control({
+        waypoints: [L.latLng(startCoords[0], startCoords[1]), L.latLng(destCoords[0], destCoords[1])],
+        routeWhileDragging: true,
+        lineOptions: { styles: [{ color: color, weight: 4, dashArray: dashArray }] }
+      }).addTo(map);
+
+      routeControl.on('routesfound', function(e) {
+        let route = e.routes[0];
+        let distance = (route.summary.totalDistance / 1000).toFixed(2);
+        let time = calculateETA(distance, mode);
+
+        document.getElementById("distance").innerText = distance;
+        document.getElementById("eta").innerText = time;
+        document.getElementById("dashboard").style.display = "block";
+
+        updateVerbalCues(route.instructions);
+      });
+    }
+
+    function calculateETA(distance, mode) {
+      const speeds = { car: 60, bicycle: 20, foot: 5, train: 80 };
+      return Math.round(distance / speeds[mode] * 60);
+    }
+
+    function updateVerbalCues(instructions) {
+      let index = 0;
+      function nextStep() {
+        if (index < instructions.length) {
+          let step = instructions[index].text;
+          document.getElementById("verbalCue").innerText = step;
+          if (soundEnabled) speak(step);
+          index++;
+          setTimeout(nextStep, 5000);
+        }
+      }
+      nextStep();
+    }
+
+    function speak(text) {
+      let speech = new SpeechSynthesisUtterance(text);
+      speech.lang = 'en-US';
+      window.speechSynthesis.speak(speech);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById("soundStatus").innerText = soundEnabled ? "On" : "Off";
+    }
+
+    async function autoComplete(inputElement, type) {
+      const value = inputElement.value.trim();
+      const suggestionsBox = document.getElementById(`${type}-suggestions`);
+
+      if (value.length < 3) {
+        suggestionsBox.innerHTML = "";
+        return;
+      }
+
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&addressdetails=1&limit=5`);
+      const results = await response.json();
+
+      suggestionsBox.innerHTML = "";
+
+      results.forEach(place => {
+        const displayName = place.display_name;
+        const suggestion = document.createElement("div");
+        suggestion.innerText = displayName;
+        suggestion.onclick = () => {
+          inputElement.value = displayName;
+          suggestionsBox.innerHTML = "";
+        };
+        suggestionsBox.appendChild(suggestion);
+      });
+    }
+  </script>
+
+</body>
+</html>
