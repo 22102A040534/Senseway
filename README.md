@@ -1,5 +1,7 @@
 # Senseway
-Navigation App for Neuro diverse Individuals
+Navigation App for Neuro diverse Individuals.
+
+
 SenseWay – AI-Powered Smart Navigation for Neurodiverse Users SenseWay is an AI-driven smart navigation platform designed to offer personalized, accessible, and stress-free routing solutions for neurodiverse individuals. Whether you're planning a calm walk or need real-time emergency support, SenseWay adapts to your sensory preferences to help you move through the world with confidence.
 
 🚀 Features Route Planning Choose between the Shortest, Sensor-Friendly, or Safe Rest Stop routes based on individual preferences. Routes are visualized on a map with live distance and ETA updates.
