@@ -1,5 +1,5 @@
 ## Hi there 👋
- SenseWay – AI-Powered Smart Navigation for Neurodiverse Users
+ SenseWay – AI-Powered Smart Navigation for Neurodiverse Users - https://senseway-c517e.web.app/
 SenseWay is an AI-driven smart navigation platform designed to offer personalized, accessible, and stress-free routing solutions for neurodiverse individuals. Whether you're planning a calm walk or need real-time emergency support, SenseWay adapts to your sensory preferences to help you move through the world with confidence.
 
 🚀 Features
@@ -67,5 +67,4 @@ Edit
 ├── peer-monitoring/
 └── assets/
 🔗 Live Demo
-Hosted on Firebase: https://your-project-id.web.app (incognito mode)
-
+(https://senseway-c517e.web.app/)
